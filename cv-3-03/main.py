@@ -6,6 +6,7 @@ import sys
 import os
 import importlib.util
 import io
+import argparse  # Импортируем argparse для обработки аргументов командной строки
 
 # Установка UTF-8 кодировки для вывода
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -17,7 +18,7 @@ plt.ion()
 def load_module_from_file(file_path, module_name):
     """Динамически загружает модуль из файла"""
     try:
-        # ✅ Проверка существования файла перед загрузкой
+        #  Проверка существования файла перед загрузкой
         if not os.path.exists(file_path):
             print(f"Файл модуля не найден: {file_path}")
             return None
@@ -42,7 +43,7 @@ if text_detection_module is None:
 
 def detect_plate_by_shape(img):
     """Детекция номерного знака по форме"""
-    # ✅ Проверка входных данных
+    #  Проверка входных данных
     if img is None:
         return None, None, None
         
@@ -66,13 +67,12 @@ def detect_plate_by_shape(img):
 
 def detect_plate_by_color(img):
     """Детекция номерного знака по цвету"""
-    # ✅ Проверка входных данных
+    #  Проверка входных данных
     if img is None:
         return None
         
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     
-    # ❌ Хардкод цветовых диапазонов - можно вынести в параметры
     lower_white = np.array([0, 0, 150])
     upper_white = np.array([180, 50, 255])
     mask_white = cv2.inRange(hsv, lower_white, upper_white)
@@ -91,7 +91,7 @@ def detect_plate_by_color(img):
 
 def extract_plate_region(img, pos):
     """Извлечение региона номерного знака"""
-    # ✅ Проверка входных данных
+    #  Проверка входных данных
     if img is None or pos is None:
         return None, None, None, None
         
@@ -109,7 +109,7 @@ def extract_plate_region(img, pos):
     x1, y1 = np.min(x), np.min(y)
     x2, y2 = np.max(x), np.max(y)
     
-    # ✅ Проверка валидности координат
+    #  Проверка валидности координат
     if x2 <= x1 or y2 <= y1:
         return None, None, None, None
         
@@ -124,11 +124,12 @@ def run_east_detection(image_path):
         if text_detection_module is None:
             print("Модуль text_detection не загружен")
             return None
-        # ✅ Проверка существования файла изображения
+        #  Проверка существования файла изображения
         if not os.path.exists(image_path):
             print(f"Файл изображения не найден: {image_path}")
             return None
         print("Запуск EAST детекции...")
+
         # Сохраняем оригинальный stdin
         original_stdin = sys.stdin
         # Создаем mock для ввода
@@ -162,7 +163,7 @@ def recognize_plate_text(plate_image):
         if pic2txt_module is None:
             print("Модуль pic2txt не загружен")
             return ""
-        # ✅ Проверка входного изображения
+        #  Проверка входного изображения
         if plate_image is None or plate_image.size == 0:
             print("Пустое изображение для OCR")
             return ""
@@ -180,7 +181,7 @@ def preprocess_plate(plate_image):
         if pic2txt_module is None:
             print("Модуль pic2txt не загружен")
             return plate_image
-        # ✅ Проверка входного изображения
+        # Проверка входного изображения
         if plate_image is None:
             return None
         return pic2txt_module.preprocess(plate_image, mode="document", scale=1.5)
@@ -269,10 +270,15 @@ def save_visualization(original, edges, color_mask, cropped_plate, processed_ocr
 
 def main():
     """Основная функция"""
-    # ❌ Хардкод пути - можно сделать параметром
-    image_path = 'cv-3-03/photo.jpg'
     
-    # ✅ Проверка существования файла
+    # Инициализация argparse
+    parser = argparse.ArgumentParser(description="Детекция номерного знака")
+    parser.add_argument("image_path", type=str, help="Путь к изображению для обработки")
+    args = parser.parse_args()
+    
+    image_path = args.image_path  # Получаем путь к изображению из аргумента
+    
+    # Проверка существования файла
     if not os.path.exists(image_path):
         print(f"Ошибка: файл изображения не найден: {image_path}")
         print("Проверьте путь к файлу")
@@ -328,7 +334,7 @@ def main():
     
     # 3. Распознавание текста
     if plate_detected and cropped_plate is not None:
-        # ✅ Проверка размера вырезанной области
+        # Проверка размера вырезанной области
         if cropped_plate.size > 0:
             plate_text = recognize_plate_text(cropped_plate)
             print(f"Распознанный текст: {plate_text}")
